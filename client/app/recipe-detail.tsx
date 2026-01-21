@@ -10,7 +10,6 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Recipe } from '@/types/recipe';
-import { mockRecipes } from '@/types/mockData';
 
 export default function RecipeDetailScreen() {
   const router = useRouter();
@@ -27,10 +26,6 @@ export default function RecipeDetailScreen() {
     }
   }
 
-  // Fall back to mock data if no passed data or parsing failed
-  if (!recipe) {
-    recipe = mockRecipes.find(r => r.id === id);
-  }
 
   if (!recipe) {
     return (

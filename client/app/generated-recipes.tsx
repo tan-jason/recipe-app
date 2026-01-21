@@ -11,7 +11,6 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { RecipeCard } from '@/components/recipe/RecipeCard';
-import { mockRecipes } from '@/types/mockData';
 import { Recipe, RecipeGenerationResponse } from '@/types/recipe';
 import { recipeService } from '@/services/recipeService';
 
@@ -33,12 +32,14 @@ export default function GeneratedRecipesScreen() {
         setIdentifiedIngredients(data.identifiedIngredients);
       } catch (error) {
         console.error('Error parsing recipes data:', error);
-        // Fallback to mock data
-        setRecipes(mockRecipes.slice(0, 5));
+        Alert.alert(
+          'Error',
+          'Failed to load recipes. Please try taking a new photo.',
+          [{ text: 'OK', onPress: () => router.push('/') }]
+        );
       }
     } else {
-      // Use mock data if no API data provided
-      setRecipes(mockRecipes.slice(0, 5));
+      router.push('/');
     }
   }, [recipesData]);
 
@@ -54,20 +55,11 @@ export default function GeneratedRecipesScreen() {
 
   const handleRefreshRecipes = async () => {
     if (!lastImageUri && !recipesData) {
-      // If we don't have the original image, use mock shuffle
-      setLoading(true);
-      setTimeout(() => {
-        const currentIds = recipes.map(r => r.id);
-        const availableRecipes = mockRecipes.filter(r => !currentIds.includes(r.id));
-
-        if (availableRecipes.length >= 5) {
-          setRecipes(availableRecipes.slice(0, 5));
-        } else {
-          const shuffled = [...mockRecipes].sort(() => Math.random() - 0.5);
-          setRecipes(shuffled.slice(0, 5));
-        }
-        setLoading(false);
-      }, 1000);
+      Alert.alert(
+        'No Photo Available',
+        'To generate new recipes, please take a new photo of ingredients.',
+        [{ text: 'Take Photo', onPress: () => router.push('/') }]
+      );
       return;
     }
 
@@ -83,13 +75,11 @@ export default function GeneratedRecipesScreen() {
         });
         setRecipes(response.recipes);
       } else {
-        // Use the ingredients from the original API call
-        // This is a fallback - ideally we'd store the original image URI
-        setTimeout(() => {
-          const shuffled = [...mockRecipes].sort(() => Math.random() - 0.5);
-          setRecipes(shuffled.slice(0, 5));
-          setLoading(false);
-        }, 1000);
+        Alert.alert(
+          'Unable to Refresh',
+          'Please take a new photo to generate different recipes.',
+          [{ text: 'Take Photo', onPress: () => router.push('/') }]
+        );
         return;
       }
     } catch (error) {
