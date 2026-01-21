@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to capture images of ingredients for recipe suggestions.",
+        "NSPhotoLibraryUsageDescription": "This app accesses your photo library to select images of ingredients for recipe suggestions."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -37,6 +41,18 @@
           "dark": {
             "backgroundColor": "#000000"
           }
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Recipe App to access your camera to capture ingredient photos."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Recipe App to access your photos to select ingredient images."
         }
       ]
     ],
