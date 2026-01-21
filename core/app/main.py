@@ -119,11 +119,6 @@ async def generate_recipes_json(
     }
     """
     try:
-        print("🔥 JSON RECIPE GENERATION ENDPOINT HIT")
-        print(f"📱 Request headers: {dict(request.headers)}")
-        print(f"🌐 Client host: {request.client.host if request.client else 'N/A'}")
-        print(f"📦 Data keys: {list(data.keys())}")
-
         # Extract base64 image data
         image_data = data.get('image', '')
         exclude_ids = data.get('exclude_recipe_ids', [])

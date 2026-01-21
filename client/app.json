@@ -10,12 +10,15 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.jtan.recipeapp",
       "infoPlist": {
         "NSCameraUsageDescription": "This app uses the camera to capture images of ingredients for recipe suggestions.",
-        "NSPhotoLibraryUsageDescription": "This app accesses your photo library to select images of ingredients for recipe suggestions."
+        "NSPhotoLibraryUsageDescription": "This app accesses your photo library to select images of ingredients for recipe suggestions.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
+      "package": "com.jtan.recipeapp",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -23,7 +26,11 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",

@@ -103,7 +103,7 @@ export default function RecipeDetailScreen() {
             <Text style={styles.sectionTitle}>Ingredients</Text>
             {recipe.ingredients.map((ingredient, index) => (
               <View key={index} style={styles.ingredientItem}>
-                <View style={styles.bullet} />
+                <Text style={styles.bullet}>—</Text>
                 <Text style={styles.ingredientText}>{ingredient}</Text>
               </View>
             ))}
@@ -113,9 +113,9 @@ export default function RecipeDetailScreen() {
             <Text style={styles.sectionTitle}>Instructions</Text>
             {recipe.instructions.map((instruction, index) => (
               <View key={index} style={styles.instructionItem}>
-                <View style={styles.stepNumber}>
-                  <Text style={styles.stepNumberText}>{index + 1}</Text>
-                </View>
+                <Text style={styles.stepNumberText}>
+                  {String(index + 1).padStart(2, '0')}
+                </Text>
                 <Text style={styles.instructionText}>{instruction}</Text>
               </View>
             ))}
@@ -129,13 +129,13 @@ export default function RecipeDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 2,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
@@ -246,10 +246,9 @@ const styles = StyleSheet.create({
   bullet: {
     width: 6,
     height: 6,
-    borderRadius: 3,
-    backgroundColor: '#007AFF',
-    marginTop: 8,
-    marginRight: 12,
+    color: '#71717a',
+    marginTop: 1,
+    marginRight: 15,
   },
   ingredientText: {
     fontSize: 16,
@@ -260,22 +259,14 @@ const styles = StyleSheet.create({
   instructionItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  stepNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    marginTop: 2,
+    marginBottom: 20,
+    gap: 16,
   },
   stepNumberText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontWeight: '300',
+    color: '#9ca3af',
+    marginTop: 2,
   },
   instructionText: {
     fontSize: 16,

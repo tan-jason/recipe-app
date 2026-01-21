@@ -6,18 +6,7 @@ interface ApiConfig {
 }
 
 const getApiBaseUrl = (): string => {
-  // Check for environment variable first
-  const envApiUrl = Constants.expoConfig?.extra?.apiUrl;
-  if (envApiUrl) {
-    return envApiUrl;
-  }
-
-  if (__DEV__) {
-    return 'http://localhost:8000';
-  }
-
-  // Production URL (update this when deploying)
-  return 'https://your-api-domain.com';
+  return process.env.API_HOST ?? ""
 };
 
 export const apiConfig: ApiConfig = {
