@@ -45,7 +45,10 @@ export default function GeneratedRecipesScreen() {
   const handleRecipePress = (recipe: Recipe) => {
     router.push({
       pathname: '/recipe-detail',
-      params: { id: recipe.id }
+      params: {
+        id: recipe.id,
+        recipeData: JSON.stringify(recipe)
+      }
     });
   };
 
@@ -120,7 +123,6 @@ export default function GeneratedRecipesScreen() {
 
       <View style={styles.titleSection}>
         <Text style={styles.title}>Recipes</Text>
-        <Text style={styles.subtitle}>5 suggestions</Text>
       </View>
 
       <View style={styles.recipesSection}>
@@ -189,6 +191,7 @@ const styles = StyleSheet.create({
   recipesSection: {
     flex: 1,
     position: 'relative',
+    backgroundColor: '#f3f4f6'
   },
   recipeList: {
     paddingBottom: 100,

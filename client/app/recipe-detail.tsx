@@ -14,9 +14,23 @@ import { mockRecipes } from '@/types/mockData';
 
 export default function RecipeDetailScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, recipeData } = useLocalSearchParams<{ id: string; recipeData?: string }>();
 
-  const recipe = mockRecipes.find(r => r.id === id);
+  let recipe: Recipe | undefined;
+
+  // First try to get recipe from passed data
+  if (recipeData) {
+    try {
+      recipe = JSON.parse(recipeData);
+    } catch (error) {
+      console.error('Error parsing recipe data:', error);
+    }
+  }
+
+  // Fall back to mock data if no passed data or parsing failed
+  if (!recipe) {
+    recipe = mockRecipes.find(r => r.id === id);
+  }
 
   if (!recipe) {
     return (

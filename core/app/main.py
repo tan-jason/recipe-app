@@ -87,12 +87,6 @@ async def generate_recipes(
         # Step 1: Identify ingredients from image
         ingredient_result = await gemini_service.identify_ingredients(image_bytes)
 
-        if len(ingredient_result.ingredients) < 5:
-            return RecipeGenerationRequest(
-                recipes=[],
-                identify_ingredients=ingredient_result.ingredients
-            )
-
         # Step 2: Generate recipes based on ingredients
         recipes = await gemini_service.generate_recipes(
             ingredients=ingredient_result.ingredients,

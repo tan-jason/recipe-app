@@ -22,7 +22,7 @@ const getApiBaseUrl = (): string => {
 
 export const apiConfig: ApiConfig = {
   baseURL: getApiBaseUrl(),
-  timeout: 30000, // 30 seconds for image processing
+  timeout: 1200000, // 120 seconds for image processing
 };
 
 export const API_ENDPOINTS = {
