@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Alert,
+  LogBox,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -16,6 +17,8 @@ import { recipeService } from '@/services/recipeService';
 export default function HomeScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+
+  LogBox.ignoreAllLogs(true);
 
   const handleSubmit = async (imageUri: string) => {
     console.log('🖼️ Processing image:', imageUri);

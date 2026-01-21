@@ -15,7 +15,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { Recipe, RecipeGenerationResponse } from '@/types/recipe';
 import { recipeService } from '@/services/recipeService';
 
-const MAX_REFRESH_LIMIT = 8
+const MAX_REFRESH_LIMIT = 10
 
 export default function GeneratedRecipesScreen() {
   const router = useRouter();
