@@ -139,6 +139,13 @@ async def generate_recipes_json(
         # Step 1: Identify ingredients from image
         ingredient_result = await gemini_service.identify_ingredients(image_bytes)
 
+        if not ingredient_result.ingredients or len(ingredient_result.ingredients) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="No ingredients detected in the image. Please take a clearer photo of your ingredients."
+            )
+
+
         # Step 2: Generate recipes based on ingredients
         recipes = await gemini_service.generate_recipes(
             ingredients=ingredient_result.ingredients,

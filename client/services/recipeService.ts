@@ -106,10 +106,7 @@ class RecipeService {
    * Handle API errors with user-friendly messages
    */
   private handleApiError(error: any): Error {
-    if (error.message) {
-      return new Error(error.message);
-    }
-
+    // Check for backend error detail first (FastAPI returns errors in this format)
     if (error.response?.data?.detail) {
       return new Error(error.response.data.detail);
     }
@@ -124,6 +121,10 @@ class RecipeService {
 
     if (error.response?.status === 415) {
       return new Error('Invalid image format. Please use JPEG or PNG images.');
+    }
+
+    if (error.message) {
+      return new Error(error.message);
     }
 
     return new Error('An unexpected error occurred while processing your request. Please try again.');

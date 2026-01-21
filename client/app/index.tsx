@@ -36,24 +36,22 @@ export default function HomeScreen() {
     } catch (error) {
       console.error('Error generating recipes:', error);
 
-      Alert.alert(
-        'Recipe Generation Failed',
-        error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.',
-        [
-          {
-            text: 'Try Again',
-            style: 'default',
-          },
-          {
-            text: 'Use Sample Recipes',
-            style: 'default',
-            onPress: () => {
-              // Navigate with mock data as fallback
-              router.push('/generated-recipes');
-            },
-          },
-        ]
-      );
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+      const isNoIngredients = errorMessage.toLowerCase().includes('no ingredients detected');
+
+      if (isNoIngredients) {
+        Alert.alert(
+          'No Ingredients Found',
+          'We couldn\'t detect any ingredients in your photo. Please try taking a clearer picture of your ingredients.',
+          [{ text: 'Try Again', style: 'default' }]
+        );
+      } else {
+        Alert.alert(
+          'Something Went Wrong',
+          errorMessage,
+          [{ text: 'Try Again', style: 'default' }]
+        );
+      }
     } finally {
       setLoading(false);
     }

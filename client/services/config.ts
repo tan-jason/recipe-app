@@ -6,7 +6,7 @@ interface ApiConfig {
 }
 
 const getApiBaseUrl = (): string => {
-  return process.env.API_HOST ?? ""
+  return process.env.EXPO_PUBLIC_API_HOST ?? "http://localhost:8000"
 };
 
 export const apiConfig: ApiConfig = {
