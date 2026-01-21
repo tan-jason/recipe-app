@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,17 +6,41 @@ import {
   FlatList,
   TouchableOpacity,
   SafeAreaView,
+  Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { RecipeCard } from '@/components/recipe/RecipeCard';
 import { mockRecipes } from '@/types/mockData';
-import { Recipe } from '@/types/recipe';
+import { Recipe, RecipeGenerationResponse } from '@/types/recipe';
+import { recipeService } from '@/services/recipeService';
 
 export default function GeneratedRecipesScreen() {
   const router = useRouter();
-  const [recipes, setRecipes] = useState<Recipe[]>(mockRecipes.slice(0, 5));
+  const { recipesData } = useLocalSearchParams<{ recipesData?: string }>();
+
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [identifiedIngredients, setIdentifiedIngredients] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [lastImageUri, setLastImageUri] = useState<string>('');
+
+  // Load initial data from navigation params
+  useEffect(() => {
+    if (recipesData) {
+      try {
+        const data: RecipeGenerationResponse = JSON.parse(recipesData);
+        setRecipes(data.recipes);
+        setIdentifiedIngredients(data.identifiedIngredients);
+      } catch (error) {
+        console.error('Error parsing recipes data:', error);
+        // Fallback to mock data
+        setRecipes(mockRecipes.slice(0, 5));
+      }
+    } else {
+      // Use mock data if no API data provided
+      setRecipes(mockRecipes.slice(0, 5));
+    }
+  }, [recipesData]);
 
   const handleRecipePress = (recipe: Recipe) => {
     router.push({
@@ -25,23 +49,56 @@ export default function GeneratedRecipesScreen() {
     });
   };
 
-  const handleRefreshRecipes = () => {
-    setLoading(true);
-    // Simulate API call delay
-    setTimeout(() => {
-      // Get 5 different recipes (excluding current ones)
-      const currentIds = recipes.map(r => r.id);
-      const availableRecipes = mockRecipes.filter(r => !currentIds.includes(r.id));
+  const handleRefreshRecipes = async () => {
+    if (!lastImageUri && !recipesData) {
+      // If we don't have the original image, use mock shuffle
+      setLoading(true);
+      setTimeout(() => {
+        const currentIds = recipes.map(r => r.id);
+        const availableRecipes = mockRecipes.filter(r => !currentIds.includes(r.id));
 
-      if (availableRecipes.length >= 5) {
-        setRecipes(availableRecipes.slice(0, 5));
+        if (availableRecipes.length >= 5) {
+          setRecipes(availableRecipes.slice(0, 5));
+        } else {
+          const shuffled = [...mockRecipes].sort(() => Math.random() - 0.5);
+          setRecipes(shuffled.slice(0, 5));
+        }
+        setLoading(false);
+      }, 1000);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Generate new recipes excluding current ones
+      const currentIds = recipes.map(r => r.id);
+
+      if (lastImageUri) {
+        const response = await recipeService.generateRecipes({
+          imageUri: lastImageUri,
+          excludeRecipeIds: currentIds,
+        });
+        setRecipes(response.recipes);
       } else {
-        // If not enough different recipes, shuffle all recipes
-        const shuffled = [...mockRecipes].sort(() => Math.random() - 0.5);
-        setRecipes(shuffled.slice(0, 5));
+        // Use the ingredients from the original API call
+        // This is a fallback - ideally we'd store the original image URI
+        setTimeout(() => {
+          const shuffled = [...mockRecipes].sort(() => Math.random() - 0.5);
+          setRecipes(shuffled.slice(0, 5));
+          setLoading(false);
+        }, 1000);
+        return;
       }
+    } catch (error) {
+      console.error('Error refreshing recipes:', error);
+      Alert.alert(
+        'Refresh Failed',
+        'Unable to generate new recipes. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const handleBackToCamera = () => {

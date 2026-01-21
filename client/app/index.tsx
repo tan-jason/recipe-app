@@ -11,21 +11,52 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
+import { recipeService } from '@/services/recipeService';
 
 export default function HomeScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (imageUri: string) => {
-    console.log('Image URI:', imageUri);
+    console.log('🖼️ Processing image:', imageUri);
     setLoading(true);
 
-    // Simulate processing delay
-    setTimeout(() => {
+    try {
+      const response = await recipeService.generateRecipes({
+        imageUri: imageUri,
+      });
+
+      router.push({
+        pathname: '/generated-recipes',
+        params: {
+          recipesData: JSON.stringify(response),
+        },
+      });
+
+    } catch (error) {
+      console.error('Error generating recipes:', error);
+
+      Alert.alert(
+        'Recipe Generation Failed',
+        error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.',
+        [
+          {
+            text: 'Try Again',
+            style: 'default',
+          },
+          {
+            text: 'Use Sample Recipes',
+            style: 'default',
+            onPress: () => {
+              // Navigate with mock data as fallback
+              router.push('/generated-recipes');
+            },
+          },
+        ]
+      );
+    } finally {
       setLoading(false);
-      // Navigate to generated recipes screen
-      router.push('/generated-recipes');
-    }, 2000);
+    }
   };
 
   const handleTakePhoto = async () => {
