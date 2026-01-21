@@ -93,15 +93,23 @@ Examples:
     async def generate_recipes(
         self,
         ingredients: List[str],
-        exclude_recipe_ids: List[str] = None
+        exclude_titles: List[str] = None
     ) -> List[Recipe]:
         """Generate 5 recipes based on identified ingredients"""
 
-        exclude_ids = exclude_recipe_ids or []
         ingredients_text = ", ".join(ingredients)
 
-        prompt = f"""Generate exactly 5 recipes using: {ingredients_text}
+        # Build exclusion text if titles provided
+        exclusion_text = ""
+        if exclude_titles:
+            titles_list = "\n".join(f"- {title}" for title in exclude_titles)
+            exclusion_text = f"""
+IMPORTANT: Do NOT generate any of these recipes (or similar variations):
+{titles_list}
+"""
 
+        prompt = f"""Generate exactly 5 recipes using: {ingredients_text}
+{exclusion_text}
 Requirements:
 - Use 2-3 main ingredients from the list
 - Mix difficulties: 2 Easy, 2 Medium, 1 Hard

@@ -39,6 +39,33 @@ class RecipeService {
   }
 
   /**
+   * Regenerate recipes using known ingredients (no image processing)
+   * Used for the "New recipes" refresh functionality
+   */
+  async regenerateRecipes(params: {
+    ingredients: string[];
+    excludeTitles: string[];
+  }): Promise<{ recipes: Recipe[] }> {
+    try {
+
+      const response = await apiClient.post<{ recipes: Recipe[] }>(
+        '/api/regenerate-recipes',
+        {
+          ingredients: params.ingredients,
+          exclude_titles: params.excludeTitles,
+        }
+      );
+
+      console.log('✨ Regenerated recipes:', response.recipes.length);
+      return response;
+
+    } catch (error) {
+      console.error('❌ Error regenerating recipes:', error);
+      throw this.handleApiError(error);
+    }
+  }
+
+  /**
    * Check API health status
    */
   async checkHealth(): Promise<{ status: string; model?: string }> {

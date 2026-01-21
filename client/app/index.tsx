@@ -112,7 +112,7 @@ export default function HomeScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Analyzing your ingredients...</Text>
-          <Text style={styles.loadingSubtext}>This may take a few seconds</Text>
+          <Text style={styles.loadingSubtext}>This may take a moment</Text>
         </View>
       </SafeAreaView>
     );

@@ -90,7 +90,7 @@ async def generate_recipes(
         # Step 2: Generate recipes based on ingredients
         recipes = await gemini_service.generate_recipes(
             ingredients=ingredient_result.ingredients,
-            exclude_recipe_ids=exclude_ids
+            exclude_titles=[]  # Initial generation has no exclusions
         )
 
         return RecipeGenerationResponse(
@@ -147,7 +147,7 @@ async def generate_recipes_json(
         # Step 2: Generate recipes based on ingredients
         recipes = await gemini_service.generate_recipes(
             ingredients=ingredient_result.ingredients,
-            exclude_recipe_ids=exclude_ids
+            exclude_titles=[]  # Initial generation has no exclusions
         )
 
         return RecipeGenerationResponse(
@@ -232,6 +232,42 @@ async def identify_ingredients_json(
         raise
     except Exception as e:
         print(f"Error in identify_ingredients_json: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/api/regenerate-recipes")
+async def regenerate_recipes(data: dict):
+    """
+    Regenerate recipes from known ingredients (no image processing needed)
+
+    Expected payload:
+    {
+        "ingredients": ["tomato", "onion", "garlic"],
+        "exclude_titles": ["Tomato Soup", "Garlic Bread"]
+    }
+    """
+    try:
+        print("🔄 REGENERATE RECIPES ENDPOINT HIT")
+
+        ingredients = data.get('ingredients', [])
+        exclude_titles = data.get('exclude_titles', [])
+
+        print(f"🥬 Ingredients: {ingredients}")
+        print(f"🚫 Excluding {len(exclude_titles)} recipes")
+
+        if not ingredients:
+            raise HTTPException(status_code=400, detail="No ingredients provided")
+
+        recipes = await gemini_service.generate_recipes(
+            ingredients=ingredients,
+            exclude_titles=exclude_titles
+        )
+
+        return {"recipes": recipes}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in regenerate_recipes: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 if __name__ == "__main__":

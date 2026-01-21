@@ -11,8 +11,11 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { RecipeCard } from '@/components/recipe/RecipeCard';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { Recipe, RecipeGenerationResponse } from '@/types/recipe';
 import { recipeService } from '@/services/recipeService';
+
+const MAX_REFRESH_LIMIT = 8
 
 export default function GeneratedRecipesScreen() {
   const router = useRouter();
@@ -21,7 +24,8 @@ export default function GeneratedRecipesScreen() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [identifiedIngredients, setIdentifiedIngredients] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [lastImageUri, setLastImageUri] = useState<string>('');
+  const [allGeneratedTitles, setAllGeneratedTitles] = useState<string[]>([]);
+  const [refreshCount, setRefreshCount] = useState<number>(1);
 
   // Load initial data from navigation params
   useEffect(() => {
@@ -30,6 +34,8 @@ export default function GeneratedRecipesScreen() {
         const data: RecipeGenerationResponse = JSON.parse(recipesData);
         setRecipes(data.recipes);
         setIdentifiedIngredients(data.identifiedIngredients);
+        // Store initial recipe titles for exclusion tracking
+        setAllGeneratedTitles(data.recipes.map(r => r.title));
       } catch (error) {
         console.error('Error parsing recipes data:', error);
         Alert.alert(
@@ -54,10 +60,10 @@ export default function GeneratedRecipesScreen() {
   };
 
   const handleRefreshRecipes = async () => {
-    if (!lastImageUri && !recipesData) {
+    if (refreshCount >= MAX_REFRESH_LIMIT) {
       Alert.alert(
-        'No Photo Available',
-        'To generate new recipes, please take a new photo of ingredients.',
+        'Refresh Limit Reached',
+        "You've seen 50 recipes! Take a new photo for more ideas.",
         [{ text: 'Take Photo', onPress: () => router.push('/') }]
       );
       return;
@@ -65,23 +71,16 @@ export default function GeneratedRecipesScreen() {
 
     setLoading(true);
     try {
-      // Generate new recipes excluding current ones
-      const currentIds = recipes.map(r => r.id);
+      const response = await recipeService.regenerateRecipes({
+        ingredients: identifiedIngredients,
+        excludeTitles: allGeneratedTitles,
+      });
 
-      if (lastImageUri) {
-        const response = await recipeService.generateRecipes({
-          imageUri: lastImageUri,
-          excludeRecipeIds: currentIds,
-        });
-        setRecipes(response.recipes);
-      } else {
-        Alert.alert(
-          'Unable to Refresh',
-          'Please take a new photo to generate different recipes.',
-          [{ text: 'Take Photo', onPress: () => router.push('/') }]
-        );
-        return;
-      }
+      // Update state with new recipes
+      const newTitles = response.recipes.map(r => r.title);
+      setAllGeneratedTitles(prev => [...prev, ...newTitles]);
+      setRefreshCount(prev => prev + 1);
+      setRecipes(response.recipes);
     } catch (error) {
       console.error('Error refreshing recipes:', error);
       Alert.alert(
@@ -116,22 +115,33 @@ export default function GeneratedRecipesScreen() {
       </View>
 
       <View style={styles.recipesSection}>
-        <FlatList
-          data={recipes}
-          renderItem={renderRecipe}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.recipeList}
-        />
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <LoadingSpinner size="lg" color="primary" />
+            <Text style={styles.loadingText}>Getting new recipes...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={recipes}
+            renderItem={renderRecipe}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.recipeList}
+          />
+        )}
 
         <TouchableOpacity
-          style={styles.newRecipesButton}
+          style={[
+            styles.newRecipesButton,
+            loading && styles.newRecipesButtonLoading,
+            refreshCount >= MAX_REFRESH_LIMIT && styles.newRecipesButtonDisabled
+          ]}
           onPress={handleRefreshRecipes}
-          disabled={loading}
+          disabled={loading || refreshCount >= MAX_REFRESH_LIMIT}
         >
           <Ionicons name="refresh" size={16} color="#FFFFFF" />
           <Text style={styles.newRecipesButtonText}>
-            {loading ? 'Getting new recipes...' : 'New recipes'}
+            {refreshCount >= MAX_REFRESH_LIMIT ? 'Limit reached' : 'New recipes'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -183,6 +193,17 @@ const styles = StyleSheet.create({
     position: 'relative',
     backgroundColor: '#f3f4f6'
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: 100,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#6b7280',
+  },
   recipeList: {
     paddingBottom: 100,
     paddingTop: 10,
@@ -199,6 +220,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 25,
     gap: 8,
+  },
+  newRecipesButtonLoading: {
+    backgroundColor: '#71717a',
+  },
+  newRecipesButtonDisabled: {
+    backgroundColor: '#9ca3af',
   },
   newRecipesButtonText: {
     fontSize: 16,
