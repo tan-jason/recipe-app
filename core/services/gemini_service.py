@@ -217,3 +217,101 @@ Return valid JSON array with exactly 5 recipes."""
                 tags=["Casserole", "Baked"]
             )
         ]
+
+    async def cooking_assistant(
+        self,
+        recipe: Dict[str, Any],
+        conversation_history: List[Dict[str, str]],
+        user_message: str
+    ) -> str:
+        """Chat with user about a recipe - for voice cooking assistant"""
+
+        # Format recipe context
+        ingredients_text = "\n".join(f"- {ing}" for ing in recipe.get('ingredients', []))
+        instructions_text = "\n".join(
+            f"{i+1}. {step}" for i, step in enumerate(recipe.get('instructions', []))
+        )
+
+        # Format conversation history
+        history_text = ""
+        if conversation_history:
+            for msg in conversation_history[-6:]:  # Last 6 messages for context
+                role = "User" if msg['role'] == 'user' else "Assistant"
+                history_text += f"{role}: {msg['content']}\n"
+
+        prompt = f"""You are a friendly cooking assistant helping someone cook this recipe.
+
+RECIPE: {recipe.get('title', 'Unknown Recipe')}
+
+INGREDIENTS:
+{ingredients_text}
+
+INSTRUCTIONS:
+{instructions_text}
+
+COOKING TIME: {recipe.get('cookingTime', 'Unknown')} minutes
+SERVINGS: {recipe.get('servings', 'Unknown')}
+
+CONVERSATION SO FAR:
+{history_text}
+
+USER'S QUESTION: {user_message}
+
+Respond naturally and helpfully. Keep responses concise (1-3 sentences) since they will be spoken aloud.
+If asked about a step, provide clear guidance. If asked about substitutions or techniques, give practical advice.
+Be encouraging and friendly."""
+
+        try:
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=[{"parts": [{"text": prompt}]}]
+            )
+            return response.candidates[0].content.parts[0].text.strip()
+        except Exception as e:
+            print(f"Error in cooking assistant: {e}")
+            return "Sorry, I had trouble understanding. Could you ask that again?"
+
+    async def speech_to_text(self, audio_base64: str, mime_type: str = "audio/wav") -> str:
+        """Transcribe audio to text using Google Cloud Speech-to-Text v2 API"""
+        from google.cloud.speech_v2 import SpeechClient
+        from google.cloud.speech_v2.types import cloud_speech
+        import base64
+
+        try:
+            client = SpeechClient()
+
+            # Decode base64 audio
+            audio_bytes = base64.b64decode(audio_base64)
+
+            # Configure for LINEAR16 WAV audio at 16kHz
+            config = cloud_speech.RecognitionConfig(
+                explicit_decoding_config=cloud_speech.ExplicitDecodingConfig(
+                    encoding=cloud_speech.ExplicitDecodingConfig.AudioEncoding.LINEAR16,
+                    sample_rate_hertz=16000,
+                    audio_channel_count=1,
+                ),
+                language_codes=["en-US"],
+                model="short",  # Optimized for short audio < 1 min
+            )
+
+            # Build the recognizer path
+            project_id = settings.GOOGLE_CLOUD_PROJECT
+            recognizer = f"projects/{project_id}/locations/global/recognizers/_"
+
+            request = cloud_speech.RecognizeRequest(
+                recognizer=recognizer,
+                config=config,
+                content=audio_bytes,
+            )
+
+            response = client.recognize(request=request)
+
+            # Extract transcript
+            if response.results:
+                transcript = response.results[0].alternatives[0].transcript
+                return transcript.strip()
+
+            return ""
+        except Exception as e:
+            print(f"Error in speech to text: {e}")
+            return ""

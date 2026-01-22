@@ -1,7 +1,8 @@
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 import uvicorn
+import httpx
 from typing import Optional, List
 import sys
 import os
@@ -133,8 +134,8 @@ async def generate_recipes_json(
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Invalid base64 image data: {str(e)}")
 
-        print(f"📷 Image size: {len(image_bytes)} bytes")
-        print(f"🚫 Exclude recipe IDs: {exclude_ids}")
+        print(f"Image size: {len(image_bytes)} bytes")
+        print(f"Exclude recipe IDs: {exclude_ids}")
 
         # Step 1: Identify ingredients from image
         ingredient_result = await gemini_service.identify_ingredients(image_bytes)
@@ -270,6 +271,145 @@ async def regenerate_recipes(data: dict):
         raise
     except Exception as e:
         print(f"Error in regenerate_recipes: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/api/cooking-assistant")
+async def cooking_assistant(data: dict):
+    """
+    Voice cooking assistant - chat about a recipe
+
+    Payload:
+    {
+        "recipe": { title, ingredients, instructions, ... },
+        "conversation_history": [
+            {"role": "user", "content": "What's step one?"},
+            {"role": "assistant", "content": "First, bring water to boil..."}
+        ],
+        "user_message": "How much salt should I add?"
+    }
+    """
+    try:
+        recipe = data.get('recipe')
+        history = data.get('conversation_history', [])
+        user_message = data.get('user_message', '')
+
+        print(f"USER MESSAGE {user_message}")
+
+        if not recipe:
+            raise HTTPException(status_code=400, detail="Recipe is required")
+        if not user_message:
+            raise HTTPException(status_code=400, detail="User message is required")
+
+        response = await gemini_service.cooking_assistant(
+            recipe=recipe,
+            conversation_history=history,
+            user_message=user_message
+        )
+
+        return {"response": response}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in cooking_assistant: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/api/text-to-speech")
+async def text_to_speech(data: dict):
+    """
+    Convert text to speech using ElevenLabs API
+
+    Payload:
+    {
+        "text": "Hello, how can I help you today?"
+    }
+
+    Returns: MP3 audio data
+    """
+    try:
+        text = data.get('text', '')
+
+        print("BOT RESPONSE", text)
+        if not text:
+            raise HTTPException(status_code=400, detail="Text is required")
+
+        if not settings.ELEVENLABS_API_KEY:
+            raise HTTPException(status_code=500, detail="ElevenLabs API key not configured")
+
+        voice_id = settings.ELEVENLABS_VOICE_ID
+        url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+
+        headers = {
+            "Accept": "audio/mpeg",
+            "Content-Type": "application/json",
+            "xi-api-key": settings.ELEVENLABS_API_KEY,
+        }
+
+        payload = {
+            "text": text,
+            "model_id": "eleven_flash_v2_5",
+            "voice_settings": {
+                "stability": 0.8,
+                "similarity_boost": 0.9,
+                "style": 0.5,
+                "speed": 1.1,
+                "use_speaker_boost": True,
+            }
+        }
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload, headers=headers, timeout=30.0)
+
+            if response.status_code != 200:
+                print(f"ElevenLabs API error: {response.status_code} - {response.text}")
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=f"ElevenLabs API error: {response.text}"
+                )
+
+            return Response(
+                content=response.content,
+                media_type="audio/mpeg",
+                headers={"Content-Disposition": "inline; filename=speech.mp3"}
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in text_to_speech: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/api/speech-to-text")
+async def speech_to_text(data: dict):
+    """
+    Convert speech to text using Gemini's audio capabilities
+
+    Payload:
+    {
+        "audio": "base64_encoded_audio_data",
+        "mime_type": "audio/wav"  // optional, defaults to audio/wav
+    }
+
+    Returns: { "transcript": "transcribed text" }
+    """
+    try:
+        audio_data = data.get('audio', '')
+        mime_type = data.get('mime_type', 'audio/wav')
+
+        if not audio_data:
+            raise HTTPException(status_code=400, detail="Audio data is required")
+
+        import time
+        start_time = time.time()
+        transcript = await gemini_service.speech_to_text(audio_data, mime_type)
+        print(f"STT TIME {time.time() - start_time}")
+
+        return {"transcript": transcript}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in speech_to_text: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 if __name__ == "__main__":
