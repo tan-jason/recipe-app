@@ -10,6 +10,21 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Recipe } from '@/types/recipe';
+import { VoiceAssistant } from '@/components/VoiceAssistant';
+import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
+
+// Placeholder recipe for hook initialization when recipe is not yet available
+const placeholderRecipe: Recipe = {
+  id: '',
+  title: '',
+  summary: '',
+  ingredients: [],
+  instructions: [],
+  cookingTime: 0,
+  servings: 0,
+  difficulty: 'Easy',
+  tags: [],
+};
 
 export default function RecipeDetailScreen() {
   const router = useRouter();
@@ -26,6 +41,10 @@ export default function RecipeDetailScreen() {
     }
   }
 
+  // Voice assistant hook - must be called unconditionally
+  const { state: voiceState, isActive: voiceActive, toggle: toggleVoice } = useVoiceAssistant(
+    recipe || placeholderRecipe
+  );
 
   if (!recipe) {
     return (
@@ -122,6 +141,14 @@ export default function RecipeDetailScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {recipe && (
+        <VoiceAssistant
+          state={voiceState}
+          isActive={voiceActive}
+          onToggle={toggleVoice}
+        />
+      )}
     </SafeAreaView>
   );
 }

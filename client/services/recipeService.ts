@@ -66,6 +66,61 @@ class RecipeService {
   }
 
   /**
+   * Send message to cooking assistant
+   */
+  async cookingAssistant(params: {
+    recipe: Recipe;
+    conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>;
+    userMessage: string;
+  }): Promise<{ response: string }> {
+    try {
+      const response = await apiClient.post<{ response: string }>(
+        '/api/cooking-assistant',
+        {
+          recipe: params.recipe,
+          conversation_history: params.conversationHistory,
+          user_message: params.userMessage,
+        }
+      );
+      return response;
+    } catch (error) {
+      console.error('Error in cooking assistant:', error);
+      throw this.handleApiError(error);
+    }
+  }
+
+  /**
+   * Convert text to speech using ElevenLabs
+   * Returns audio data as ArrayBuffer
+   */
+  async textToSpeech(text: string): Promise<ArrayBuffer> {
+    try {
+      const response = await apiClient.postForBinary('/api/text-to-speech', { text });
+      return response;
+    } catch (error) {
+      console.error('Error in text-to-speech:', error);
+      throw this.handleApiError(error);
+    }
+  }
+
+  /**
+   * Convert speech to text using Gemini
+   * Returns transcript string
+   */
+  async speechToText(audioBase64: string, mimeType: string = 'audio/wav'): Promise<string> {
+    try {
+      const response = await apiClient.post<{ transcript: string }>(
+        '/api/speech-to-text',
+        { audio: audioBase64, mime_type: mimeType }
+      );
+      return response.transcript;
+    } catch (error) {
+      console.error('Error in speech-to-text:', error);
+      throw this.handleApiError(error);
+    }
+  }
+
+  /**
    * Check API health status
    */
   async checkHealth(): Promise<{ status: string; model?: string }> {

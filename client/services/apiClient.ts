@@ -62,6 +62,14 @@ class ApiClient {
     const response = await this.client.post<T>(url, formData);
     return response.data;
   }
+
+  // Method for binary responses (e.g., audio files)
+  async postForBinary(url: string, data?: any): Promise<ArrayBuffer> {
+    const response = await this.client.post(url, data, {
+      responseType: 'arraybuffer',
+    });
+    return response.data;
+  }
 }
 
 export const apiClient = new ApiClient();
