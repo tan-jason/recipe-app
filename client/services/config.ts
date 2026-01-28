@@ -15,7 +15,5 @@ export const apiConfig: ApiConfig = {
 };
 
 export const API_ENDPOINTS = {
-  GENERATE_RECIPES: '/api/generate-recipes',
-  IDENTIFY_INGREDIENTS: '/api/identify-ingredients',
   HEALTH: '/health',
 } as const;

@@ -65,7 +65,6 @@ recipe-app/
 
 - `GET /health` - Health check
 - `POST /api/generate-recipes-json` - Main endpoint: accepts `{image: "base64...", exclude_recipe_ids: []}`
-- `POST /api/identify-ingredients-json` - Identify ingredients only
 
 ## Configuration
 
